@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <title>Personnel Requisition Form</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+      --card-bg: #ffffff;
+      --primary: #0288d1; 
+      --primary-hover: #0277bd;
+      --primary-light: #e1f5fe;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #cbd5e1;
+      --input-bg: #f8fafc;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --error: #ef4444;
+      --shadow-lg: 0 20px 40px -5px rgba(2, 136, 209, 0.15), 0 10px 20px -5px rgba(2, 136, 209, 0.1);
+      --shadow-hover: 0 25px 50px -12px rgba(2, 136, 209, 0.25);
+    }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center; 
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .form-container {
+      background: var(--card-bg);
+      max-width: 750px;
+      width: 100%;
+      padding: 40px;
+      border-radius: 24px;
+      box-shadow: var(--shadow-lg);
+      border-top: 8px solid var(--primary);
+      position: relative;
+      transition: all 0.4s ease;
+      animation: popIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.95) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* --- TOAST NOTIFICATION --- */
+    .toast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: var(--error);
+      color: #fff;
+      text-align: center;
+      border-radius: 12px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1000;
+      left: 50%;
+      top: 30px;
+      transform: translateX(-50%);
+      box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .toast.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 3.5s;
+    }
+
+    @keyframes fadein { from { top: 0; opacity: 0; } to { top: 30px; opacity: 1; } }
+    @keyframes fadeout { from { top: 30px; opacity: 1; } to { top: 0; opacity: 0; } }
+
+    /* --- PERFECTLY CENTERED SCREENS (Welcome, Loading, Success) --- */
+    #welcomeSection, #successSection, .loading-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      flex: 1; 
+      min-height: 50vh; 
+      padding: 20px 10px;
+    }
+
+    #welcomeSection { animation: fadeIn 0.5s ease; }
+    #successSection { display: none; animation: popIn 0.5s ease; }
+    .loading-overlay { display: none; }
+
+    .welcome-icon {
+      width: 90px;
+      height: 90px;
+      background: var(--primary-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 25px auto;
+      color: var(--primary);
+    }
+    .welcome-icon svg { width: 45px; height: 45px; }
+
+    #welcomeSection h1 {
+      font-size: 32px;
+      color: var(--text-main);
+      margin: 0 0 15px 0;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    #welcomeSection p {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 450px;
+      margin: 0 auto 35px auto;
+    }
+
+    .btn-pulse {
+      animation: pulse 2s infinite;
+      padding: 18px 40px !important;
+      font-size: 16px !important;
+      border-radius: 50px !important;
+      width: auto !important;
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(2, 136, 209, 0.4); }
+      70% { box-shadow: 0 0 0 15px rgba(2, 136, 209, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(2, 136, 209, 0); }
+    }
+
+    #formSection { display: none; width: 100%; animation: fadeIn 0.5s ease; }
+
+    /* --- HEADER & PROGRESS --- */
+    .header-content { text-align: center; margin-bottom: 25px; }
+    h2 { color: var(--text-main); font-size: 26px; font-weight: 700; margin: 0 0 8px 0; }
+    p.subtitle { color: var(--text-muted); font-size: 14px; margin: 0; }
+
+    .progress-container { display: flex; justify-content: space-between; position: relative; margin-bottom: 45px; max-width: 100%; }
+    .progress-container::before { content: ''; background-color: var(--border-color); position: absolute; top: 50%; left: 0; transform: translateY(-50%); height: 4px; width: 100%; z-index: 1; border-radius: 2px; }
+    .progress-step { background-color: var(--card-bg); color: var(--text-muted); border: 3px solid var(--border-color); border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-weight: 700; z-index: 2; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .progress-step.active { border-color: var(--primary); background-color: var(--primary); color: white; animation: progressPulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+    @keyframes progressPulse {
+      0% { box-shadow: 0 0 0 0 rgba(2, 136, 209, 0.5); transform: scale(1.1); }
+      50% { box-shadow: 0 0 0 8px rgba(2, 136, 209, 0); transform: scale(1.15); }
+      100% { box-shadow: 0 0 0 0 rgba(2, 136, 209, 0); transform: scale(1.1); }
+    }
+
+    /* --- FORM STEPS & GRID LAYOUT --- */
+    .form-step { display: none; animation: fadeSlideUp 0.4s ease; }
+    .form-step.active { display: block; }
+    @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    .section-title { font-size: 18px; font-weight: 700; color: var(--primary); margin: 20px 0 30px 0; text-align: center; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 30px; position: relative; }
+    .form-row .form-group { margin-bottom: 0; }
+
+    /* TOOLTIP CSS */
+    .label-with-tooltip { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .label-with-tooltip label { margin-bottom: 0; }
+    .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background-color: var(--border-color); color: white; font-size: 11px; font-weight: bold; cursor: help; position: relative; }
+    .tooltip-icon:hover { background-color: var(--primary); }
+    .tooltip-text { visibility: hidden; width: 220px; background-color: #334155; color: #fff; text-align: center; border-radius: 8px; padding: 10px; position: absolute; z-index: 10; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.3s; font-size: 12px; font-weight: 400; line-height: 1.4; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .tooltip-text::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #334155 transparent transparent transparent; }
+    .tooltip-icon:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+    label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 10px; color: var(--text-main); }
+
+    /* --- ICONS & INPUTS --- */
+    .input-wrapper { position: relative; display: flex; align-items: center; }
+    .input-wrapper svg.field-icon { position: absolute; left: 14px; width: 18px; height: 18px; color: #94a3b8; pointer-events: none; transition: color 0.3s ease; }
+    .has-icon { padding-left: 42px !important; }
+
+    input[type="text"], input[type="email"], input[type="number"], input[type="date"], select, textarea {
+      width: 100%; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 12px; box-sizing: border-box; font-family: inherit; font-size: 14px; background-color: var(--input-bg); transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background-color: #ffffff; box-shadow: 0 0 0 4px var(--primary-light); transform: translateY(-2px); }
+    input:focus + svg.field-icon, select:focus + svg.field-icon, .input-wrapper:focus-within svg.field-icon { color: var(--primary); }
+
+    /* REAL-TIME VALIDATION STYLES */
+    input:valid:not(:placeholder-shown), select:valid:not([value=""]), textarea:valid:not(:placeholder-shown) { border-color: var(--success); box-shadow: 0 0 0 4px var(--success-light); }
+    input:valid:not(:placeholder-shown) + svg.field-icon, select:valid:not([value=""]) + svg.field-icon { color: var(--success); }
+
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 16px; cursor: pointer; }
+    textarea { resize: vertical; min-height: 110px; }
+
+    /* --- MODERN DRAG & DROP FILE UPLOAD --- */
+    .file-upload-wrapper { position: relative; width: 100%; }
+    .file-upload-input { position: absolute; margin: 0; padding: 0; width: 100%; height: 100%; outline: none; opacity: 0; cursor: pointer; z-index: 5; }
+    .file-upload-box { border: 2px dashed var(--border-color); border-radius: 12px; padding: 25px 20px; text-align: center; background: var(--input-bg); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .file-upload-wrapper:hover .file-upload-box { border-color: var(--primary); background: var(--primary-light); }
+    .file-upload-box svg { width: 30px; height: 30px; color: var(--primary); }
+    .file-name-text { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+
+    /* --- BUTTONS --- */
+    .btn-group { display: flex; gap: 20px; margin-top: 10px; padding-top: 25px; border-top: 1px dashed var(--border-color); }
+    
+    .btn { 
+      padding: 16px 24px; 
+      font-size: 15px; 
+      font-weight: 700; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      text-align: center; 
+      border: none; 
+    }
+    
+    .btn-group .btn { flex: 1; }
+
+    .btn-next, .btn-submit { background-color: var(--primary); color: white; box-shadow: 0 4px 14px rgba(2, 136, 209, 0.4); }
+    .btn-next:hover, .btn-submit:hover { background-color: var(--primary-hover); transform: translateY(-3px) scale(1.01); box-shadow: var(--shadow-hover); }
+    
+    /* BAGO: Mas maayos na Back Button Design */
+    .btn-prev { 
+      background-color: #e2e8f0; 
+      color: var(--text-main); 
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05); 
+    }
+    .btn-prev:hover { 
+      background-color: #cbd5e1; 
+      transform: translateY(-3px) scale(1.01); 
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08); 
+    }
+
+    .btn:disabled { background-color: #94a3b8; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+    /* --- LOADING SPINNER --- */
+    .spinner { width: 55px; height: 55px; border: 6px solid var(--primary-light); border-bottom-color: var(--primary); border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; margin-bottom: 20px; }
+    @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ========================================================= */
+    /* RESPONSIVE NATIVE APP FEEL (MOBILE & TABLET)              */
+    /* ========================================================= */
+    @media (max-width: 768px) {
+      .form-container { padding: 30px 20px; }
+      h2 { font-size: 24px; }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 0;
+        background: var(--card-bg); 
+      }
+      .form-container { 
+        /* IN-INCREASE ANG BOTTOM PADDING (250px) PARA HINDI MATAKPAN NG KEYBOARD YUNG HULING FIELD */
+        padding: 25px 20px 250px 20px; 
+        border-radius: 0; 
+        border-top: none; 
+        box-shadow: none; 
+        min-height: 100dvh; 
+        animation: none; 
+        display: flex;
+        flex-direction: column;
+      }
+      
+      #welcomeSection, #successSection, .loading-overlay {
+        flex: 1; 
+        min-height: auto;
+      }
+
+      .header-content { text-align: left; margin-top: 10px; margin-bottom: 20px; }
+      .header-content h2 { font-size: 28px; letter-spacing: -0.5px; }
+      
+      .section-title { text-align: left; font-size: 16px; margin: 15px 0 25px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+      .form-row { grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px; }
+      .form-group { margin-bottom: 15px; }
+      
+      label { font-size: 13px; color: #475569; }
+      
+      input[type="text"], input[type="email"], input[type="number"], input[type="date"], select, textarea { 
+        font-size: 16px !important; 
+        padding: 16px 16px; 
+        background-color: #f1f5f9; 
+        border: 2px solid transparent; 
+        border-radius: 16px; 
+      }
+      input:focus, select:focus, textarea:focus {
+        background-color: #ffffff;
+        border-color: var(--primary);
+        box-shadow: 0 4px 15px rgba(2, 136, 209, 0.1);
+        transform: translateY(0);
+      }
+      
+      .has-icon { padding-left: 48px !important; }
+      .input-wrapper svg.field-icon { left: 16px; width: 20px; height: 20px; }
+      
+      .btn-group { flex-direction: column-reverse; gap: 12px; border-top: none; padding-top: 15px; }
+      
+      .btn { padding: 18px 24px; border-radius: 100px; font-size: 16px; width: 100%; margin: 0; display: block; } 
+      
+      #welcomeSection h1 { font-size: 28px; }
+      
+      .toast { top: auto; bottom: 30px; width: 90%; min-width: auto; }
+      @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+      @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="toastNotif" class="toast">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    <span id="toastMessage">Error message here.</span>
+  </div>
+
+  <div class="form-container" id="mainContainer">
+    
+    <div id="welcomeSection">
+      <div class="welcome-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      </div>
+      <h1>Personnel Requisition</h1>
+      <p>Need a new team member? Start your request here. We've made the process simple, fast, and secure.</p>
+      <button class="btn btn-pulse" style="background-color: var(--primary); color: white; box-shadow: 0 4px 14px rgba(2, 136, 209, 0.4);" onclick="startForm()">Request Now</button>
+    </div>
+
+    <div id="formSection">
+      <div class="header-content">
+        <h2>Submit Request</h2>
+        <p class="subtitle">Please fill out the details completely.</p>
+      </div>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-step active">1</div>
+        <div class="progress-step">2</div>
+        <div class="progress-step">3</div>
+      </div>
+
+      <form id="trfForm">
+        
+        <div class="form-step active" id="step1">
+          <div class="section-title">Step 1: General Information</div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email Address *</label>
+              <div class="input-wrapper">
+                <input type="email" id="email" class="has-icon" placeholder="e.g. juan.delacruz@enderuncolleges.com" required>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Name of Requestor *</label>
+              <div class="input-wrapper">
+                <input type="text" id="requestorName" class="has-icon" placeholder="e.g. Juan Dela Cruz" required>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Department *</label>
+              <div class="input-wrapper">
+                <input type="text" id="department" class="has-icon" placeholder="e.g. IT Department" required>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Position Title Requested *</label>
+              <div class="input-wrapper">
+                <input type="text" id="position" class="has-icon" placeholder="e.g. Software Engineer" required>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Name of Department Head *</label>
+              <div class="input-wrapper">
+                <input type="text" id="deptHeadName" class="has-icon" placeholder="e.g. Maria Clara" required>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email of Department Head *</label>
+              <div class="input-wrapper">
+                <input type="email" id="deptHeadEmail" class="has-icon" placeholder="e.g. maria.clara@enderuncolleges.com" required>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              </div>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button type="button" class="btn btn-next" onclick="nextStep(1)">Next Step &rarr;</button>
+          </div>
+        </div>
+
+        <div class="form-step" id="step2">
+          <div class="section-title">Step 2: Job Details</div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>No. of headcount for hire *</label>
+              <input type="number" id="resourceCount" min="1" placeholder="e.g. 1" required>
+            </div>
+            <div class="form-group">
+              <label>Assigned Location *</label>
+              <div class="input-wrapper">
+                <select id="location" class="has-icon" required onchange="toggleOtherLocationField()">
+                  <option value="" disabled selected>Select Location</option>
+                  <option value="Main Campus">Main Campus</option>
+                  <option value="Venice">Venice</option>
+                  <option value="Podium">Podium</option>
+                  <option value="Estancia">Estancia</option>
+                  <option value="Other">Other</option>
+                </select>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              </div>
+            </div>
+            <div class="form-group" id="otherLocationGroup" style="display: none; margin-top: 15px;">
+              <label>Please specify Location *</label>
+              <div class="input-wrapper">
+                <input type="text" id="otherLocation" class="has-icon" placeholder="e.g. Remote, BGC Office">
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Employment Type *</label>
+              <select id="empType" required onchange="toggleDurationField()">
+                <option value="" disabled selected>Select Type</option>
+                <option value="Full Time">Full Time</option>
+                <option value="Part Time">Part Time</option>
+                <option value="Project Based">Project-based</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Salary Range *</label>
+              <input type="text" id="salary" placeholder="e.g. 20k - 30k" required>
+            </div>
+          </div>
+
+          <div class="form-group" id="durationGroup" style="display: none;">
+            <label>Duration (If Project Based/Part Time/Contractual) *</label>
+            <div class="input-wrapper">
+              <input type="text" id="duration" class="has-icon" placeholder="e.g. 6 Months">
+              <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Target Start Date *</label>
+              <div class="input-wrapper">
+                <input type="date" id="startDate" class="has-icon" required>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Work Schedule *</label>
+              <div class="input-wrapper">
+                <input type="text" id="workSchedule" class="has-icon" placeholder="e.g. Mon-Fri, 9:00 AM - 6:00 PM" required>
+                <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="label-with-tooltip">
+              <label>Replacement for *</label>
+              <span class="tooltip-icon">?<span class="tooltip-text">Indicate the name of the person being replaced and the reason. Put "N/A" if not applicable.</span></span>
+            </div>
+            <textarea id="replacement" placeholder="Provide details if this is a replacement (put N/A if not applicable)..." required></textarea>
+          </div>
+
+          <div class="btn-group">
+            <button type="button" class="btn btn-prev" onclick="prevStep(0)">&larr; Back</button>
+            <button type="button" class="btn btn-next" onclick="nextStep(2)">Next Step &rarr;</button>
+          </div>
+        </div>
+
+        <div class="form-step" id="step3">
+          <div class="section-title">Step 3: Requirements & Attachments</div>
+          
+          <div class="form-group">
+            <label>Academic Qualification *</label>
+            <textarea id="academic" placeholder="e.g. Bachelor's Degree in Computer Science..." required></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Required Years of Experience *</label>
+            <input type="text" id="experience" placeholder="e.g. 2-3 Years" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Skills Required *</label>
+            <textarea id="skills" placeholder="e.g. HTML, CSS, JavaScript, Google Apps Script..." required></textarea>
+          </div>
+          
+          <div class="form-group">
+            <div class="label-with-tooltip">
+              <label>Other Arrangements *</label>
+              <span class="tooltip-icon">?<span class="tooltip-text">Special requests like high-performance laptops or software installations. Put "N/A" if none.</span></span>
+            </div>
+            <textarea id="other" placeholder="e.g. Requesting a high-performance laptop (put N/A if none)..." required></textarea>
+          </div>
+          
+         <div class="form-group">
+            <label>Attachment (Required, max 5MB) *</label>
+            <div class="file-upload-wrapper">
+              <input type="file" id="attachment" class="file-upload-input" onchange="updateFileName(this)" required>
+              <div class="file-upload-box">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <span class="file-name-text" id="fileNameDisplay">Click or drag a file here to upload</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button type="button" class="btn btn-prev" onclick="prevStep(1)">&larr; Back</button>
+            <button type="submit" class="btn btn-submit" id="submitBtn">Submit Request ✔</button>
+          </div>
+        </div>
+      </form>
+    </div>
+    
+    <div id="loadingOverlay" class="loading-overlay">
+      <span class="spinner"></span>
+      <h3 style="color: var(--text-main); margin-bottom: 5px;">Submitting Request...</h3>
+      <p style="color: var(--text-muted); font-size: 14px;">Generating your documents and setting up folders. Please wait.</p>
+    </div>
+
+    <div id="successSection">
+      <div style="width: 70px; height: 70px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+        <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2 style="color: #1e293b; margin-bottom: 8px;">Submission Successful!</h2>
+      <p style="color: #64748b; margin-bottom: 25px;">Your Personnel Requisition Form has been recorded.</p>
+      
+      <div style="background: #f8fafc; border: 1px dashed #cbd5e1; padding: 15px 30px; border-radius: 12px; display: inline-block; margin-bottom: 30px;">
+        <span style="font-size: 12px; color: #64748b; display: block; margin-bottom: 4px; text-transform: uppercase; font-weight: bold;">Request ID</span>
+        <strong id="reqIdDisplay" style="font-size: 24px; color: #0288d1; letter-spacing: 1.5px;"></strong>
+      </div>
+      
+      <br>
+      <button onclick="resetForm()" class="btn btn-pulse" style="background-color: var(--primary); color: white; box-shadow: 0 4px 14px rgba(2, 136, 209, 0.4);">Submit Another Request</button>
+    </div>
+
+  </div>
+
+  <script>
+    function showToast(message) {
+      const toast = document.getElementById("toastNotif");
+      const msgElem = document.getElementById("toastMessage");
+      msgElem.innerText = message;
+      toast.className = "toast show";
+      
+      setTimeout(function(){ 
+        toast.className = toast.className.replace("show", ""); 
+      }, 3000);
+    }
+
+    function startForm() {
+      document.getElementById('welcomeSection').style.display = 'none';
+      document.getElementById('formSection').style.display = 'block';
+    }
+
+    function toggleDurationField() {
+      const empType = document.getElementById('empType').value;
+      const durationGroup = document.getElementById('durationGroup');
+      const durationInput = document.getElementById('duration');
+      
+      if (empType === 'Project Based' || empType === 'Part Time' || empType === 'Contractual') {
+        durationGroup.style.display = 'block';
+        durationInput.setAttribute('required', 'required'); 
+      } else {
+        durationGroup.style.display = 'none';
+        durationInput.removeAttribute('required'); 
+        durationInput.value = ''; 
+      }
+    }
+
+    function toggleOtherLocationField() {
+      const locationVal = document.getElementById('location').value;
+      const otherGroup = document.getElementById('otherLocationGroup');
+      const otherInput = document.getElementById('otherLocation');
+      
+      if (locationVal === 'Other') {
+        otherGroup.style.display = 'block';
+        otherInput.setAttribute('required', 'required');
+      } else {
+        otherGroup.style.display = 'none';
+        otherInput.removeAttribute('required');
+        otherInput.value = '';
+      }
+    }
+
+    function updateFileName(input) {
+      const display = document.getElementById('fileNameDisplay');
+      if (input.files && input.files.length > 0) {
+        display.innerText = "Selected: " + input.files[0].name;
+        display.style.color = "var(--primary)";
+      } else {
+        display.innerText = "Click or drag a file here to upload";
+        display.style.color = "var(--text-muted)";
+      }
+    }
+
+    const steps = document.querySelectorAll(".form-step");
+    const progressSteps = document.querySelectorAll(".progress-step");
+
+    function validateCurrentStep(stepIndex) {
+      const inputs = steps[stepIndex].querySelectorAll('[required]');
+      for (let input of inputs) {
+        if (!input.checkValidity()) {
+          input.reportValidity();
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function nextStep(nextIndex) {
+      const currentIndex = nextIndex - 1;
+      if (validateCurrentStep(currentIndex)) {
+        steps[currentIndex].classList.remove("active");
+        steps[nextIndex].classList.add("active");
+        progressSteps[nextIndex].classList.add("active");
+        scrollToTop();
+      }
+    }
+
+    function prevStep(prevIndex) {
+      const currentIndex = prevIndex + 1;
+      steps[currentIndex].classList.remove("active");
+      steps[prevIndex].classList.add("active");
+      progressSteps[currentIndex].classList.remove("active");
+      scrollToTop();
+    }
+
+    function resetForm() {
+      document.getElementById('successSection').style.display = 'none';
+      document.getElementById('welcomeSection').style.display = 'flex';
+      document.getElementById('trfForm').reset();
+      
+      document.getElementById('fileNameDisplay').innerText = "Click or drag a file here to upload";
+      document.getElementById('fileNameDisplay').style.color = "var(--text-muted)";
+      toggleDurationField();
+      toggleOtherLocationField();
+
+      steps.forEach(s => s.classList.remove('active'));
+      progressSteps.forEach(p => p.classList.remove('active'));
+      
+      steps[0].classList.add('active');
+      progressSteps[0].classList.add('active');
+      
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = false;
+      btn.innerText = 'Submit Request ✔';
+      
+      scrollToTop();
+    }
+
+    document.getElementById('trfForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = 'Processing...';
+
+      const locationDropdown = document.getElementById('location').value;
+      const finalLocation = (locationDropdown === 'Other') ? document.getElementById('otherLocation').value : locationDropdown;
+
+      const formData = {
+        email: document.getElementById('email').value,
+        requestorName: document.getElementById('requestorName').value,
+        salary: document.getElementById('salary').value,
+        department: document.getElementById('department').value,
+        position: document.getElementById('position').value,
+        resourceCount: document.getElementById('resourceCount').value,
+        location: finalLocation,
+        deptHeadName: document.getElementById('deptHeadName').value,
+        deptHeadEmail: document.getElementById('deptHeadEmail').value,
+        empType: document.getElementById('empType').value,
+        replacement: document.getElementById('replacement').value,
+        duration: document.getElementById('duration').value,
+        startDate: document.getElementById('startDate').value,
+        workSchedule: document.getElementById('workSchedule').value,
+        academic: document.getElementById('academic').value,
+        experience: document.getElementById('experience').value,
+        skills: document.getElementById('skills').value,
+        other: document.getElementById('other').value,
+        fileContent: null,
+        fileName: null,
+        mimeType: null
+      };
+
+      const fileInput = document.getElementById('attachment');
+      const file = fileInput.files[0];
+
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          showToast("File size exceeds 5MB. Please choose a smaller file.");
+          btn.disabled = false;
+          btn.innerText = 'Submit Request ✔';
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          formData.fileContent = e.target.result.split(',')[1];
+          formData.fileName = file.name;
+          formData.mimeType = file.type;
+          sendToBackend(formData);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        sendToBackend(formData);
+      }
+    });
+
+    function sendToBackend(data) {
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('loadingOverlay').style.display = 'flex';
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          document.getElementById('loadingOverlay').style.display = 'none';
+          document.getElementById('reqIdDisplay').innerText = response;
+          document.getElementById('successSection').style.display = 'flex';
+        })
+        .withFailureHandler(function(error) {
+          showToast('Submission Error: ' + error.message);
+          document.getElementById('formSection').style.display = 'block';
+          document.getElementById('loadingOverlay').style.display = 'none';
+          document.getElementById('submitBtn').disabled = false;
+          document.getElementById('submitBtn').innerText = 'Submit Request ✔';
+        })
+        .processWebAppForm(data);
+    }
+  </script>
+</body>
+</html>
